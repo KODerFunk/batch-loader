@@ -1,10 +1,11 @@
 # BatchLoader
 
 ## Installation
+
 ```shell
-yarn add batch-loader
+npm install @koderfunk/batch-loader
 ```
 or
 ```shell
-npm install batch-loader
+yarn add @koderfunk/batch-loader
 ```
