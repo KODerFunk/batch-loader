@@ -29,6 +29,7 @@
     "test:ci": "jest --ci",
     "prebuild": "rm -rf ./dist",
     "build": "tsc --project tsconfig.build.json",
+    "prerelease": "npm run build",
     "release": "np"
   },
   "dependencies": {

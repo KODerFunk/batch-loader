@@ -39,7 +39,7 @@ export type IBatchLoaderItem<R> = {
   }
   | {
     readonly status: 'resolved'
-    readonly result: R
+    readonly result: R | undefined
     readonly error?: unknown
   }
   | {
@@ -59,7 +59,7 @@ export type IBatchLoaderItemPatch<R> =
   }
   | {
     readonly status: 'resolved'
-    readonly result: R
+    readonly result: R | undefined
     readonly error: undefined
   }
   | {
@@ -73,10 +73,15 @@ export type IBatchLoaderGetStateResult<R> =
     result?: undefined
   }
   | {
-    status: Exclude<BatchLoaderStatus, 'unrequested' | 'resolved'>
-    result?: R
+    status: Exclude<BatchLoaderStatus, 'unrequested' | 'resolved' | 'rejected'>
+    result: R | undefined
   }
   | {
     status: 'resolved'
     result: R
+  }
+  | {
+    status: 'rejected'
+    result: R | undefined
+    error: unknown
   }

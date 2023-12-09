@@ -29,6 +29,7 @@ describe('BatchLoader', () => {
     const batchFetchSpy = jest.spyOn(options, 'batchFetch')
     const testBatchLoader = new BatchLoader<string, { test: string }>(options)
 
+    expect(testBatchLoader.getStatus('a')).toStrictEqual('unrequested')
     expect(testBatchLoader.getState('a')).toStrictEqual({
       status: 'unrequested',
       result: undefined,
@@ -52,6 +53,7 @@ describe('BatchLoader', () => {
       status: 'fetching',
       result: undefined,
     })
+    expect(testBatchLoader.getStatus('a')).toStrictEqual('fetching')
 
     expect(await promiseA1).toStrictEqual({ test: 'test_a_1' })
 
@@ -64,6 +66,7 @@ describe('BatchLoader', () => {
       status: 'resolved',
       result: { test: 'test_a_1' },
     })
+    expect(testBatchLoader.getResult('a')).toStrictEqual({ test: 'test_a_1' })
     expect(testBatchLoader.getState('c')).toStrictEqual({
       status: 'scheduled',
       result: undefined,
@@ -89,11 +92,15 @@ describe('BatchLoader', () => {
     const onErrorSpy = jest.spyOn(options, 'onError')
     const testBatchLoader = new BatchLoader<string, { test: string }>(options)
 
-    await Promise.all([expect(testBatchLoader.load('a')).rejects.toThrow('test error'), expect(testBatchLoader.load('b')).rejects.toThrow('test error')])
+    await Promise.all([
+      expect(testBatchLoader.load('a')).rejects.toThrow('test error'),
+      expect(testBatchLoader.load('b')).rejects.toThrow('test error'),
+    ])
 
     expect(testBatchLoader.getState('a')).toStrictEqual({
       status: 'rejected',
       result: undefined,
+      error: new Error('test error'),
     })
 
     expect(onErrorSpy).toHaveBeenCalledTimes(1)
@@ -307,6 +314,12 @@ describe('BatchLoader', () => {
       result: { test: 'test_a_1' },
     })
 
+    expect(await testBatchLoader.loadMany(['a', 'b', 'c'])).toStrictEqual([
+      { test: 'test_a_1' },
+      { test: 'test_b_1' },
+      { test: 'test_c_2' },
+    ])
+
     expect(batchFetchSpy).toHaveBeenCalledTimes(2)
     expect(batchFetchSpy).toHaveBeenNthCalledWith(1, ['a', 'b'])
     expect(batchFetchSpy).toHaveBeenNthCalledWith(2, ['c'])
@@ -395,5 +408,48 @@ describe('BatchLoader', () => {
     expect(batchFetchSpy).toHaveBeenCalledTimes(2)
     expect(batchFetchSpy).toHaveBeenNthCalledWith(1, ['a', 'b'])
     expect(batchFetchSpy).toHaveBeenNthCalledWith(2, ['a', 'c'])
+  })
+
+  it('should work with response with errors', async () => {
+    const options: IBatchLoaderOptions<string, { test: string }> = {
+      batchFetch: (ids) => new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(ids.map((id) => (
+            id === 'a'
+              ? { test: `test_${id}` }
+              : id === 'b'
+                ? undefined
+                : new Error(`Test error for id=${JSON.stringify(id)}`)
+          )))
+        }, TEST_TIMEOUT)
+      }),
+      onError: () => {
+        // noop
+      },
+    }
+
+    const onErrorSpy = jest.spyOn(options, 'onError')
+
+    const testBatchLoader = new BatchLoader<string, { test: string }>(options)
+
+    await expect(testBatchLoader.loadMany(['a', 'b', 'c'])).rejects.toThrow('Test error for id="c"')
+
+    expect(testBatchLoader.getState('a')).toStrictEqual({
+      status: 'resolved',
+      result: { test: 'test_a' },
+    })
+
+    expect(testBatchLoader.getState('b')).toStrictEqual({
+      status: 'resolved',
+      result: undefined,
+    })
+
+    expect(testBatchLoader.getState('c')).toStrictEqual({
+      status: 'rejected',
+      result: undefined,
+      error: new Error('Test error for id="c"'),
+    })
+
+    expect(onErrorSpy).toHaveBeenCalledTimes(0)
   })
 })

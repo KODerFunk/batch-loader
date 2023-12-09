@@ -34,15 +34,25 @@ export default class BatchLoader<ID extends number | string, R> {
   getState(id: ID): IBatchLoaderGetStateResult<R> {
     const item = this.itemsStore.get(id)
 
-    return item
-      ? ({
+    if (item) {
+      if (item.status === 'rejected') {
+        return {
+          status: item.status,
+          result: item.result,
+          error: item.error,
+        } as IBatchLoaderGetStateResult<R>
+      }
+
+      return {
         status: item.status,
         result: item.result,
-      } as IBatchLoaderGetStateResult<R>)
-      : {
-        status: 'unrequested',
-        result: undefined,
-      }
+      } as IBatchLoaderGetStateResult<R>
+    }
+
+    return {
+      status: 'unrequested',
+      result: undefined,
+    }
   }
 
   getResult(id: ID): R | undefined {
@@ -67,7 +77,9 @@ export default class BatchLoader<ID extends number | string, R> {
     return promise
   }
 
-  loadMany(ids: ID[]): Promise<R[]> {
+  loadMany<IDS extends readonly ID[]>(
+    ids: IDS,
+  ): Promise<{ -readonly [I in keyof IDS]: R }> {
     const idsForFetch = ids.filter((id) => {
       const item = this.itemsStore.get(id)
 
@@ -83,7 +95,9 @@ export default class BatchLoader<ID extends number | string, R> {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return Promise.all(ids.map((id) => this.itemsStore.get(id)!.deferred.promise))
+    return Promise.all(
+      ids.map((id) => this.itemsStore.get(id)!.deferred.promise)
+    ) as Promise<{ -readonly [I in keyof IDS]: R }>
   }
 
   private canFetch(item: IBatchLoaderItem<R>): boolean {
@@ -95,20 +109,6 @@ export default class BatchLoader<ID extends number | string, R> {
 
   private scheduleItem(id: ID, item?: IBatchLoaderItem<R>): PromiseWithResolvers<R> {
     const deferred = Promise.withResolvers<R>()
-
-    // let resolve: (value: R | PromiseLike<R>) => void
-    // let reject: (reason?: unknown) => void
-    // const promise = new Promise<R>((innerResolve, innerReject) => {
-    //   resolve = innerResolve
-    //   reject = innerReject
-    // })
-    // const deferred = {
-    //   promise,
-    //   // @ts-ignore
-    //   resolve,
-    //   // @ts-ignore
-    //   reject,
-    // }
 
     const newItem = {
       deferred,
@@ -182,9 +182,9 @@ export default class BatchLoader<ID extends number | string, R> {
         .map((id, index) => {
           const result = results[index]
 
-          return result ? this.createBatchUpdateEntry(id, result) : undefined
+          return this.createBatchUpdateEntry(id, result || undefined)
         })
-        .filter(Boolean) as [ID, IBatchLoaderItemPatch<R>][]
+        // .filter(Boolean) as [ID, IBatchLoaderItemPatch<R>][]
     )
 
     for (const { deferred, result, error } of items) {
@@ -199,14 +199,20 @@ export default class BatchLoader<ID extends number | string, R> {
     return 'resolved'
   }
 
-  private createBatchUpdateEntry(id: ID, result: R | Error): [ID, IBatchLoaderItemPatch<R>] {
+  private createBatchUpdateEntry(id: ID, result: R | Error | undefined): [ID, IBatchLoaderItemPatch<R>] {
     return [
       id,
-      result instanceof Error
-        ? {
-          status: 'rejected',
-          error: result,
-        }
+      result
+        ? result instanceof Error
+          ? {
+            status: 'rejected',
+            error: result,
+          }
+          : {
+            status: 'resolved',
+            result,
+            error: undefined,
+          }
         : {
           status: 'resolved',
           result,
