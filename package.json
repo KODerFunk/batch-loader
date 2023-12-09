@@ -24,8 +24,6 @@
     "default": "./dist/index.js"
   },
   "scripts": {
-    "postinstall": "yarn dedup",
-    "dedup": "npx yarn-deduplicate yarn.lock",
     "ts-check": "tsc --noEmit --incremental",
     "test": "jest",
     "test:ci": "jest --ci",
@@ -33,7 +31,6 @@
     "build": "tsc --project tsconfig.build.json",
     "release": "np"
   },
-  "packageManager": "^yarn@1.22.19",
   "dependencies": {
     "promise.withresolvers": "^1.0.1"
   },
