@@ -12,11 +12,17 @@
   },
   "files": [
     "dist",
+    "src",
     "typings",
     "package.json",
     "README.md",
     "LICENSE"
   ],
+  "type": "module",
+  "exports": {
+    "types": "./dist/index.d.ts",
+    "default": "./dist/index.js"
+  },
   "scripts": {
     "postinstall": "yarn dedup",
     "dedup": "npx yarn-deduplicate yarn.lock",
