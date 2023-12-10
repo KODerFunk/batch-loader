@@ -1,6 +1,6 @@
 {
   "name": "@koderfunk/batch-loader",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "license": "MIT",
   "homepage": "https://github.com/KODerFunk/batch-loader",
   "bugs": {
@@ -35,7 +35,6 @@
     "prerelease": "npm run build",
     "release": "np"
   },
-
   "devDependencies": {
     "@total-typescript/ts-reset": "^0.5.1",
     "@types/jest": "^29.5.11",
