@@ -1,10 +1,11 @@
-import type { IBatchLoaderItem, IBatchLoaderOptions } from './BatchLoader.types'
+/* eslint-disable max-lines, max-lines-per-function, max-statements, @typescript-eslint/no-magic-numbers */
+import type { BatchLoaderStatus, IBatchLoaderItem, IBatchLoaderOptions } from './BatchLoader.types'
 import BatchLoader from './BatchLoader'
 import ImmutableBatchLoaderItemsStore from './ImmutableBatchLoaderItemsStore'
 
 const TEST_TIMEOUT = 1
 
-function timeout(delay = 0) {
+function timeout(delay = 0): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, delay)
   })
@@ -20,7 +21,7 @@ describe('BatchLoader', () => {
           resolve(
             ids.map((id) => ({
               test: `test_${id}_${salt}`,
-            }))
+            })),
           )
         }, TEST_TIMEOUT)
       }),
@@ -114,7 +115,7 @@ describe('BatchLoader', () => {
       () => state,
       (newState) => {
         state = newState
-      }
+      },
     )
 
     const itemsStoreSpies = {
@@ -131,7 +132,7 @@ describe('BatchLoader', () => {
           resolve(
             ids.map((id) => ({
               test: `test_${id}_${salt}`,
-            }))
+            })),
           )
         }, TEST_TIMEOUT)
       }),
@@ -230,7 +231,7 @@ describe('BatchLoader', () => {
     ])
   })
 
-  it("should work with default refetchStrategy ('unfetched')", async () => {
+  it('should work with default refetchStrategy (\'unfetched\')', async () => {
     let salt = '1'
 
     const options: IBatchLoaderOptions<string, { test: string }> = {
@@ -239,14 +240,14 @@ describe('BatchLoader', () => {
           resolve(
             ids.map((id) => ({
               test: `test_${id}_${salt}`,
-            }))
+            })),
           )
         }, TEST_TIMEOUT)
       }),
     }
 
     const batchFetchSpy = jest.spyOn(options, 'batchFetch')
-    const testBatchLoader = new BatchLoader<string, { test: string }>(options)
+    const testBatchLoader = new BatchLoader<string, { test: string }>(options) as BatchLoader<string, { test: string }> & { batchStatus: BatchLoaderStatus }
 
     expect(testBatchLoader.batchStatus).toStrictEqual('unrequested')
     expect(testBatchLoader.getState('a')).toStrictEqual({
@@ -325,7 +326,7 @@ describe('BatchLoader', () => {
     expect(batchFetchSpy).toHaveBeenNthCalledWith(2, ['c'])
   })
 
-  it("should work with refetchStrategy: 'refresh'", async () => {
+  it('should work with refetchStrategy: \'refresh\'', async () => {
     let salt = '1'
 
     const options: IBatchLoaderOptions<string, { test: string }> = {
@@ -334,7 +335,7 @@ describe('BatchLoader', () => {
           resolve(
             ids.map((id) => ({
               test: `test_${id}_${salt}`,
-            }))
+            })),
           )
         }, TEST_TIMEOUT)
       }),
@@ -342,7 +343,7 @@ describe('BatchLoader', () => {
     }
 
     const batchFetchSpy = jest.spyOn(options, 'batchFetch')
-    const testBatchLoader = new BatchLoader<string, { test: string }>(options)
+    const testBatchLoader = new BatchLoader<string, { test: string }>(options) as BatchLoader<string, { test: string }> & { batchStatus: BatchLoaderStatus }
 
     expect(testBatchLoader.batchStatus).toStrictEqual('unrequested')
     expect(testBatchLoader.getState('a')).toStrictEqual({

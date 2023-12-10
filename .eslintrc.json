@@ -1,0 +1,29 @@
+{
+  "root": true,
+  "extends": [
+    "./.eslint-configs/base.json",
+    "./.eslint-configs/unicorn.json"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "*.ts",
+        "*.tsx"
+      ],
+      "extends": [
+        "./.eslint-configs/typescript.json"
+      ]
+    },
+    {
+      "files": [
+        "dist/*.js"
+      ],
+      "rules": {
+        "init-declarations": "off",
+        "no-magic-numbers": "off",
+        "no-undef": "off",
+        "no-unused-vars": "off"
+      }
+    }
+  ]
+}

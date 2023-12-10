@@ -1,7 +1,3 @@
-import withResolvers from 'promise.withresolvers'
-
-withResolvers.shim()
-
 import type {
   BatchLoaderStatus,
   IBatchLoaderGetStateResult,
@@ -11,8 +7,10 @@ import type {
   IBatchLoaderOptions,
 } from './BatchLoader.types'
 import DefaultBatchLoaderItemsStore from './DefaultBatchLoaderItemsStore'
+import type { PromiseWithResolvers } from './promiseWithResolvers'
+import promiseWithResolvers from './promiseWithResolvers'
 
-function defaultBatchScheduleFn(callback: () => void): void {
+function defaultBatchScheduleFn(this: void, callback: () => void): void {
   setTimeout(callback)
 }
 
@@ -22,9 +20,9 @@ const fetchingItemPatch: IBatchLoaderItemPatch<never> = Object.freeze({
 
 export default class BatchLoader<ID extends number | string, R> {
   private readonly batchScheduleFn: (callback: () => void) => void
-  private readonly itemsStore: IBatchLoaderItemsStore<ID, R>
-  public batchStatus: BatchLoaderStatus = 'unrequested'
-  private batchBuffer: ID[] = []
+  protected readonly itemsStore: IBatchLoaderItemsStore<ID, R>
+  protected batchStatus: BatchLoaderStatus = 'unrequested'
+  protected batchBuffer: ID[] = []
 
   constructor(private readonly options: IBatchLoaderOptions<ID, R>) {
     this.batchScheduleFn = options.batchScheduleFn || defaultBatchScheduleFn
@@ -94,9 +92,9 @@ export default class BatchLoader<ID extends number | string, R> {
       this.scheduleBatchFetch()
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return Promise.all(
-      ids.map((id) => this.itemsStore.get(id)!.deferred.promise)
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      ids.map((id) => this.itemsStore.get(id)!.deferred.promise),
     ) as Promise<{ -readonly [I in keyof IDS]: R }>
   }
 
@@ -108,7 +106,7 @@ export default class BatchLoader<ID extends number | string, R> {
   }
 
   private scheduleItem(id: ID, item?: IBatchLoaderItem<R>): PromiseWithResolvers<R> {
-    const deferred = Promise.withResolvers<R>()
+    const deferred = promiseWithResolvers<R>()
 
     const newItem = {
       deferred,
@@ -126,7 +124,7 @@ export default class BatchLoader<ID extends number | string, R> {
     return deferred
   }
 
-  private scheduleBatchFetch() {
+  private scheduleBatchFetch(): void {
     if (this.batchStatus === 'scheduled' || this.batchStatus === 'fetching') {
       return
     }
@@ -144,6 +142,7 @@ export default class BatchLoader<ID extends number | string, R> {
       void this.doFetch(batchBuffer).then((batchStatus) => {
         this.batchStatus = batchStatus
 
+        // eslint-disable-next-line unicorn/consistent-destructuring
         if (this.batchBuffer.length > 0) {
           this.scheduleBatchFetch()
         }
@@ -152,39 +151,43 @@ export default class BatchLoader<ID extends number | string, R> {
   }
 
   private async doFetch(ids: ID[]): Promise<'resolved' | 'rejected'> {
-    let results: (R | Error | null | undefined)[]
-
     this.itemsStore.batchUpdate(
-      ids.map((id) => [id, fetchingItemPatch as IBatchLoaderItemPatch<R>])
+      ids.map((id) => [id, fetchingItemPatch as IBatchLoaderItemPatch<R>]),
     )
+
+    let results: (R | Error | null | undefined)[]
 
     try {
       results = await this.options.batchFetch(ids)
     } catch (error: unknown) {
-      const patch: IBatchLoaderItemPatch<R> = {
-        status: 'rejected',
-        error,
-      }
-
-      const items = this.itemsStore.batchUpdate(ids.map((id) => [id, patch]))
-
-      for (const item of items) {
-        item.deferred.reject(error)
-      }
-
-      this.options.onError?.(error)
+      this.applyBatchError(ids, error)
       return 'rejected'
     }
 
-    const items = this.itemsStore.batchUpdate(
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-      ids
-        .map((id, index) => {
-          const result = results[index]
+    this.applyBatchResult(ids, results)
+    return 'resolved'
+  }
 
-          return this.createBatchUpdateEntry(id, result || undefined)
-        })
-        // .filter(Boolean) as [ID, IBatchLoaderItemPatch<R>][]
+  private applyBatchError(ids: ID[], error: unknown): void {
+    const patch: IBatchLoaderItemPatch<R> = {
+      status: 'rejected',
+      error,
+    }
+
+    const items = this.itemsStore.batchUpdate(ids.map((id) => [id, patch]))
+
+    for (const item of items) {
+      item.deferred.reject(error)
+    }
+
+    this.options.onError?.(error)
+  }
+
+  private applyBatchResult(ids: ID[], results: (R | Error | null | undefined)[]): void {
+    const items = this.itemsStore.batchUpdate(
+      // TODO: maybe dont erase prev values by `|| undefined`
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+      ids.map((id, index) => this.createBatchUpdateEntry(id, results[index] || undefined)),
     )
 
     for (const { deferred, result, error } of items) {
@@ -195,10 +198,9 @@ export default class BatchLoader<ID extends number | string, R> {
         deferred.resolve(result!)
       }
     }
-
-    return 'resolved'
   }
 
+  // eslint-disable-next-line @typescript-eslint/class-methods-use-this
   private createBatchUpdateEntry(id: ID, result: R | Error | undefined): [ID, IBatchLoaderItemPatch<R>] {
     return [
       id,

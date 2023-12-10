@@ -1,0 +1,102 @@
+{
+  "extends": [
+    "plugin:@typescript-eslint/all"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "parserOptions": {
+    "project": "./tsconfig.json"
+  },
+  "rules": {
+    "@typescript-eslint/ban-types": ["error", {
+      "types": {
+        "{}": false
+      }
+    }],
+    "@typescript-eslint/comma-dangle": ["error", "always-multiline"],
+    "@typescript-eslint/comma-spacing": "error",
+    "@typescript-eslint/consistent-type-imports": ["error", {
+      "prefer": "type-imports",
+      "disallowTypeAnnotations": false
+    }],
+    "@typescript-eslint/explicit-member-accessibility": ["error", { "accessibility": "no-public" }],
+    "@typescript-eslint/indent": ["error", 2, {
+      "SwitchCase": 1,
+      "ignoredNodes": [
+        "FunctionExpression > .params[decorators.length > 0]",
+        "FunctionExpression > .params > :matches(Decorator, :not(:first-child))",
+        "ClassBody.body > PropertyDefinition[decorators.length > 0] > .key",
+        "TSTypeParameterInstantiation",
+        "TSIntersectionType"
+      ]
+    }],
+    "@typescript-eslint/init-declarations": "off",
+    "@typescript-eslint/lines-between-class-members": ["error", "always", { "exceptAfterSingleLine": true }],
+    "max-params": "off",
+    "@typescript-eslint/max-params": ["error", { "max": 5 }],
+    "@typescript-eslint/member-delimiter-style": ["error", {
+      "multiline": {
+        "delimiter": "none",
+        "requireLast": true
+      },
+      "singleline": {
+        "delimiter": "comma",
+        "requireLast": false
+      },
+      "multilineDetection": "brackets"
+    }],
+    "@typescript-eslint/member-ordering": "off",
+    "@typescript-eslint/no-invalid-void-type": "off",
+    "@typescript-eslint/no-misused-promises": [
+      "error",
+      {
+        "checksConditionals": true,
+        "checksVoidReturn": {
+          "arguments": true,
+          "attributes": false,
+          "properties": true,
+          "returns": true,
+          "variables": true
+        }
+      }
+    ],
+    "@typescript-eslint/no-type-alias": "off",
+    "@typescript-eslint/no-unused-vars": ["error", {
+      "varsIgnorePattern": "^_",
+      "argsIgnorePattern": "^_",
+      "destructuredArrayIgnorePattern": "^_"
+    }],
+    "@typescript-eslint/no-use-before-define": ["error", {
+      "functions": false,
+      "classes": true,
+      "variables": true,
+      "enums": true,
+      "typedefs": true,
+      "ignoreTypeReferences": true
+    }],
+    "@typescript-eslint/object-curly-spacing": ["error", "always"],
+    "@typescript-eslint/parameter-properties": ["error", { "prefer": "parameter-property" }],
+    "prefer-destructuring": "off",
+    "@typescript-eslint/prefer-nullish-coalescing": "off",
+    "@typescript-eslint/prefer-readonly-parameter-types": "off",
+    "@typescript-eslint/promise-function-async": "off",
+    "@typescript-eslint/quotes": ["error", "single"],
+    "@typescript-eslint/no-extra-parens": "off",
+    "@typescript-eslint/no-magic-numbers": ["error", {
+      "ignore": [
+        0
+      ],
+      "ignoreArrayIndexes": true,
+      "detectObjects": false
+    }],
+    "@typescript-eslint/semi": ["error", "never"],
+    "@typescript-eslint/sort-type-constituents": "off",
+    "@typescript-eslint/sort-type-union-intersection-members": "off",
+    "@typescript-eslint/space-before-function-paren": ["error", {
+      "anonymous": "always",
+      "named": "never",
+      "asyncArrow": "always"
+    }],
+    "@typescript-eslint/strict-boolean-expressions": "off"
+  }
+}

@@ -13,7 +13,7 @@ export default class ImmutableBatchLoaderItemsStore<ID extends number | string, 
 implements IBatchLoaderItemsStore<ID, R> {
   constructor(
     private readonly getState: () => ImmutableBatchLoaderItemsStoreState<ID, R>,
-    private readonly setState: (state: ImmutableBatchLoaderItemsStoreState<ID, R>) => void
+    private readonly setState: (state: ImmutableBatchLoaderItemsStoreState<ID, R>) => void,
   ) {}
 
   get(id: ID): IBatchLoaderItem<R> {
@@ -29,7 +29,7 @@ implements IBatchLoaderItemsStore<ID, R> {
 
   update(id: ID, patch: IBatchLoaderItemPatch<R>): IBatchLoaderItem<R> {
     const state = this.getState()
-    const item: IBatchLoaderItem<R> | undefined = state[id]
+    const item = state[id] as IBatchLoaderItem<R> | undefined
 
     if (!item) {
       throw new Error(`Item with id: ${JSON.stringify(id)} not found`)
@@ -54,7 +54,7 @@ implements IBatchLoaderItemsStore<ID, R> {
 
     const patchedEntries = entries
       .map(([id, patch]) => {
-        const item: IBatchLoaderItem<R> | undefined = state[id]
+        const item = state[id] as IBatchLoaderItem<R> | undefined
 
         if (!item) {
           notFoundIds.push(id)

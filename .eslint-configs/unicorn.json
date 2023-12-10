@@ -1,0 +1,50 @@
+{
+  "extends": [
+    "plugin:unicorn/all"
+  ],
+  "rules": {
+    "unicorn/filename-case": ["error", {
+      "cases": {
+        "camelCase": true,
+        "pascalCase": true
+      },
+      "ignore": [
+        "\\.d\\.ts$"
+      ]
+    }],
+    "unicorn/no-array-callback-reference": "off",
+    "unicorn/no-keyword-prefix": "off",
+    "unicorn/no-nested-ternary": "off",
+    "unicorn/no-null": "off",
+    "unicorn/no-useless-undefined": "off",
+    "unicorn/numeric-separators-style": ["error", {
+      "number": {
+        "minimumDigits": 4
+      }
+    }],
+    "unicorn/prefer-top-level-await": "off",
+    "unicorn/prevent-abbreviations": ["error", {
+      "replacements": {
+        "args": false,
+        "db": false,
+        "dev": false,
+        "dist": false,
+        "e": false,
+        "env": false,
+        "err": false,
+        "fn": false,
+        "func": false,
+        "params": false,
+        "prev": false,
+        "prop": false,
+        "props": false,
+        "ref": false,
+        "req": false,
+        "res": false
+      },
+      "ignore": [
+        "prevState"
+      ]
+    }]
+  }
+}

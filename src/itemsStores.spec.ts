@@ -1,10 +1,8 @@
-import withResolvers from 'promise.withresolvers'
-
-withResolvers.shim()
-
+/* eslint-disable max-lines-per-function, max-statements */
 import DefaultBatchLoaderItemsStore from './DefaultBatchLoaderItemsStore'
 import ImmutableBatchLoaderItemsStore from './ImmutableBatchLoaderItemsStore'
 import type { IBatchLoaderItem } from './BatchLoader.types'
+import promiseWithResolvers from './promiseWithResolvers'
 
 describe('items stores', () => {
   describe('DefaultBatchLoaderItemsStore', () => {
@@ -14,17 +12,17 @@ describe('items stores', () => {
       expect(itemsStore.get('a')).toBeUndefined()
 
       const item = {
-        deferred: Promise.withResolvers<{ test: string }>(),
+        deferred: promiseWithResolvers<{ test: string }>(),
         status: 'scheduled',
       } as const
 
       itemsStore.add('a', item)
       itemsStore.add('b', {
-        deferred: Promise.withResolvers<{ test: string }>(),
+        deferred: promiseWithResolvers<{ test: string }>(),
         status: 'scheduled',
       })
       itemsStore.add('d', {
-        deferred: Promise.withResolvers<{ test: string }>(),
+        deferred: promiseWithResolvers<{ test: string }>(),
         status: 'scheduled',
       })
 
@@ -79,23 +77,23 @@ describe('items stores', () => {
       const itemsStore = new DefaultBatchLoaderItemsStore<string, { test: string }>()
 
       const item = {
-        deferred: Promise.withResolvers<{ test: string }>(),
+        deferred: promiseWithResolvers<{ test: string }>(),
         status: 'scheduled',
       } as const
 
       itemsStore.add('a', item)
       itemsStore.add('b', {
-        deferred: Promise.withResolvers<{ test: string }>(),
+        deferred: promiseWithResolvers<{ test: string }>(),
         status: 'scheduled',
       })
       itemsStore.add('d', {
-        deferred: Promise.withResolvers<{ test: string }>(),
+        deferred: promiseWithResolvers<{ test: string }>(),
         status: 'scheduled',
       })
 
       // Updating not existing item throws error
       expect(() => itemsStore.update('c', { status: 'fetching' })).toThrowError(
-        'Item with id: "c" not found'
+        'Item with id: "c" not found',
       )
 
       // Updating not existing item throws error, but set all existing items
@@ -118,23 +116,23 @@ describe('items stores', () => {
         () => state,
         (newState) => {
           state = newState
-        }
+        },
       )
 
       expect(itemsStore.get('a')).toBeUndefined()
 
       const item = {
-        deferred: Promise.withResolvers<{ test: string }>(),
+        deferred: promiseWithResolvers<{ test: string }>(),
         status: 'scheduled',
       } as const
 
       itemsStore.add('a', item)
       itemsStore.add('b', {
-        deferred: Promise.withResolvers<{ test: string }>(),
+        deferred: promiseWithResolvers<{ test: string }>(),
         status: 'scheduled',
       })
       itemsStore.add('d', {
-        deferred: Promise.withResolvers<{ test: string }>(),
+        deferred: promiseWithResolvers<{ test: string }>(),
         status: 'scheduled',
       })
 
@@ -192,27 +190,27 @@ describe('items stores', () => {
         () => state,
         (newState) => {
           state = newState
-        }
+        },
       )
 
       const item = {
-        deferred: Promise.withResolvers<{ test: string }>(),
+        deferred: promiseWithResolvers<{ test: string }>(),
         status: 'scheduled',
       } as const
 
       itemsStore.add('a', item)
       itemsStore.add('b', {
-        deferred: Promise.withResolvers<{ test: string }>(),
+        deferred: promiseWithResolvers<{ test: string }>(),
         status: 'scheduled',
       })
       itemsStore.add('d', {
-        deferred: Promise.withResolvers<{ test: string }>(),
+        deferred: promiseWithResolvers<{ test: string }>(),
         status: 'scheduled',
       })
 
       // Updating not existing item throws error
       expect(() => itemsStore.update('c', { status: 'fetching' })).toThrowError(
-        'Item with id: "c" not found'
+        'Item with id: "c" not found',
       )
 
       // Updating not existing item throws error, but set all existing items

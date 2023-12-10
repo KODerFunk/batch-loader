@@ -1,3 +1,1 @@
-import BatchLoader from './BatchLoader'
-
-export default BatchLoader
+export { default } from './BatchLoader'
