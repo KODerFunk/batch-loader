@@ -4,6 +4,7 @@
     "src/**/*.ts"
   ],
   "exclude": [
+    "dist/**/*",
     "src/**/*.spec.ts",
     "jest.config.ts"
   ],

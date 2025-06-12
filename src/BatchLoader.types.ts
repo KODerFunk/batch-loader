@@ -4,13 +4,13 @@ export interface IBatchLoaderOptions<ID extends number | string, R> {
   batchFetch: BatchFetchFunction<ID, R>
   batchScheduleFn?: (this: void, callback: () => void) => void
   itemsStore?: IBatchLoaderItemsStore<ID, R>
-  refetchStrategy?: 'unfetched' | 'refresh'
+  refetchStrategy?: 'unfetched' | 'refresh' // default: 'unfetched'
   onError?: (error: unknown) => void
 }
 
 type BatchFetchFunction<ID extends number | string, R> = (
   ids: ID[]
-) => Promise<(R | Error | null | undefined)[]>
+) => Promise<(R | Error | undefined)[]>
 
 export interface IBatchLoaderItemsStore<ID extends number | string, R> {
   get: (id: ID) => IBatchLoaderItem<R> | undefined

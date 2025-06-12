@@ -53,6 +53,24 @@ export default class BatchLoader<ID extends number | string, R> {
     }
   }
 
+  optimisticUpdate(id: ID, result: R): void {
+    if (this.itemsStore.get(id)) {
+      this.itemsStore.update(id, {
+        status: 'resolved',
+        result,
+        error: undefined,
+      })
+    } else {
+      const deferred = promiseWithResolvers<R>()
+      deferred.resolve(result)
+      this.itemsStore.add(id, {
+        deferred,
+        status: 'resolved',
+        result,
+      })
+    }
+  }
+
   getResult(id: ID): R | undefined {
     return this.itemsStore.get(id)?.result
   }
@@ -139,23 +157,38 @@ export default class BatchLoader<ID extends number | string, R> {
 
       this.batchBuffer = []
 
-      void this.doFetch(batchBuffer).then((batchStatus) => {
-        this.batchStatus = batchStatus
+      void this.doFetch(batchBuffer)
+        .then((batchStatus) => {
+          this.batchStatus = batchStatus
 
-        // eslint-disable-next-line unicorn/consistent-destructuring
-        if (this.batchBuffer.length > 0) {
-          this.scheduleBatchFetch()
-        }
-      })
+          // eslint-disable-next-line unicorn/consistent-destructuring
+          if (this.batchBuffer.length > 0) {
+            this.scheduleBatchFetch()
+          }
+        })
+        // .catch((error) => {
+        //   // eslint-disable-next-line unicorn/consistent-destructuring
+        //   this.options.onError?.(error)
+        // })
     })
   }
 
+  // eslint-disable-next-line max-statements
   private async doFetch(ids: ID[]): Promise<'resolved' | 'rejected'> {
-    this.itemsStore.batchUpdate(
-      ids.map((id) => [id, fetchingItemPatch as IBatchLoaderItemPatch<R>]),
-    )
+    try {
+      this.itemsStore.batchUpdate(
+        ids.map((id) => [id, fetchingItemPatch as IBatchLoaderItemPatch<R>]),
+      )
+    } catch (error: unknown) {
+      try {
+        this.applyBatchError(ids, error)
+      } catch {
+        // noop
+      }
+      return 'rejected'
+    }
 
-    let results: (R | Error | null | undefined)[]
+    let results: (R | Error | undefined)[]
 
     try {
       results = await this.options.batchFetch(ids)
@@ -164,7 +197,7 @@ export default class BatchLoader<ID extends number | string, R> {
       return 'rejected'
     }
 
-    this.applyBatchResult(ids, results)
+    this.applyBatchResults(ids, results)
     return 'resolved'
   }
 
@@ -183,11 +216,9 @@ export default class BatchLoader<ID extends number | string, R> {
     this.options.onError?.(error)
   }
 
-  private applyBatchResult(ids: ID[], results: (R | Error | null | undefined)[]): void {
+  private applyBatchResults(ids: ID[], results: (R | Error | undefined)[]): void {
     const items = this.itemsStore.batchUpdate(
-      // TODO: maybe dont erase prev values by `|| undefined`
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-      ids.map((id, index) => this.createBatchUpdateEntry(id, results[index] || undefined)),
+      ids.map((id, index) => this.createBatchUpdateEntry(id, results[index])),
     )
 
     for (const { deferred, result, error } of items) {

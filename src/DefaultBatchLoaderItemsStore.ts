@@ -3,6 +3,7 @@ import type {
   IBatchLoaderItemPatch,
   IBatchLoaderItemsStore,
 } from './BatchLoader.types'
+import ItemNotFoundExceptionError from './ItemNotFoundExceptionError'
 
 export default class DefaultBatchLoaderItemsStore<ID extends number | string, R>
 implements IBatchLoaderItemsStore<ID, R> {
@@ -20,7 +21,7 @@ implements IBatchLoaderItemsStore<ID, R> {
     const item = this.itemsMap.get(id)
 
     if (!item) {
-      throw new Error(`Item with id: ${JSON.stringify(id)} not found`)
+      throw new ItemNotFoundExceptionError(id)
     }
 
     return Object.assign(item, patch)
@@ -32,9 +33,12 @@ implements IBatchLoaderItemsStore<ID, R> {
     const items = entries.map(([id, patch]) => {
       try {
         return this.update(id, patch)
-      } catch {
-        notFoundIds.push(id)
-        return undefined
+      } catch (error) {
+        if (error instanceof ItemNotFoundExceptionError) {
+          notFoundIds.push(id)
+          return undefined
+        }
+        throw error
       }
     })
 

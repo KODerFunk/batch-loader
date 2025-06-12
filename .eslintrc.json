@@ -7,8 +7,8 @@
   "overrides": [
     {
       "files": [
-        "*.ts",
-        "*.tsx"
+        "src/*.ts",
+        "src/*.tsx"
       ],
       "extends": [
         "./.eslint-configs/typescript.json"

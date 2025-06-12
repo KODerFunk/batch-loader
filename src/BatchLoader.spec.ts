@@ -82,6 +82,114 @@ describe('BatchLoader', () => {
     expect(batchFetchSpy).toHaveBeenNthCalledWith(2, ['c'])
   })
 
+  it('should work optimisticUpdate', async () => {
+    let salt = '1'
+
+    const options: IBatchLoaderOptions<string, { test: string }> = {
+      batchFetch: (ids) => new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(
+            ids.map((id) => ({
+              test: `test_${id}_${salt}`,
+            })),
+          )
+        }, TEST_TIMEOUT)
+      }),
+      refetchStrategy: 'refresh',
+    }
+
+    const batchFetchSpy = jest.spyOn(options, 'batchFetch')
+    const testBatchLoader = new BatchLoader<string, { test: string }>(options)
+
+    expect(testBatchLoader.getStatus('a')).toStrictEqual('unrequested')
+    expect(testBatchLoader.getState('a')).toStrictEqual({
+      status: 'unrequested',
+      result: undefined,
+    })
+
+    testBatchLoader.optimisticUpdate('a', { test: 'optimistic_value_before_load_a' })
+    testBatchLoader.optimisticUpdate('b', { test: 'optimistic_value_before_load_b' })
+
+    expect(testBatchLoader.getState('a')).toStrictEqual({
+      status: 'resolved',
+      result: { test: 'optimistic_value_before_load_a' },
+    })
+
+    const promiseA1 = testBatchLoader.load('a')
+
+    void testBatchLoader.load('b')
+
+    expect(testBatchLoader.getState('a')).toStrictEqual({
+      status: 'scheduled',
+      result: { test: 'optimistic_value_before_load_a' },
+    })
+
+    testBatchLoader.optimisticUpdate('a', { test: 'optimistic_value_after_scheduled_a' })
+
+    expect(testBatchLoader.getState('a')).toStrictEqual({
+      status: 'resolved',
+      result: { test: 'optimistic_value_after_scheduled_a' },
+    })
+
+    await timeout()
+
+    const promiseA2 = testBatchLoader.load('a')
+
+    expect(promiseA2 === promiseA1).toStrictEqual(true)
+    expect(testBatchLoader.getState('a')).toStrictEqual({
+      status: 'fetching',
+      result: { test: 'optimistic_value_after_scheduled_a' },
+    })
+    expect(testBatchLoader.getStatus('a')).toStrictEqual('fetching')
+
+    testBatchLoader.optimisticUpdate('a', { test: 'optimistic_value_after_fetching_a' })
+
+    expect(testBatchLoader.getState('a')).toStrictEqual({
+      status: 'resolved',
+      result: { test: 'optimistic_value_after_fetching_a' },
+    })
+
+    expect(await promiseA1).toStrictEqual({ test: 'test_a_1' })
+
+    expect(testBatchLoader.getState('a')).toStrictEqual({
+      status: 'resolved',
+      result: { test: 'test_a_1' },
+    })
+
+    testBatchLoader.optimisticUpdate('a', { test: 'optimistic_value_after_await_a' })
+
+    expect(testBatchLoader.getState('a')).toStrictEqual({
+      status: 'resolved',
+      result: { test: 'optimistic_value_after_await_a' },
+    })
+
+    const promiseA3 = testBatchLoader.load('a')
+    const promiseC = testBatchLoader.load('c')
+
+    expect(promiseA3 === promiseA1).toStrictEqual(false)
+    expect(testBatchLoader.getState('a')).toStrictEqual({
+      status: 'scheduled',
+      result: { test: 'optimistic_value_after_await_a' },
+    })
+    expect(testBatchLoader.getState('c')).toStrictEqual({
+      status: 'scheduled',
+      result: undefined,
+    })
+
+    salt = '2'
+
+    expect(await promiseC).toStrictEqual({ test: 'test_c_2' })
+    expect(await promiseA3).toStrictEqual({ test: 'test_a_2' })
+    expect(testBatchLoader.getState('a')).toStrictEqual({
+      status: 'resolved',
+      result: { test: 'test_a_2' },
+    })
+
+    expect(batchFetchSpy).toHaveBeenCalledTimes(2)
+    expect(batchFetchSpy).toHaveBeenNthCalledWith(1, ['a', 'b'])
+    expect(batchFetchSpy).toHaveBeenNthCalledWith(2, ['a', 'c'])
+  })
+
   it('should work when batchFetch throw Error', async () => {
     const options: IBatchLoaderOptions<string, { test: string }> = {
       batchFetch: () => Promise.reject(new Error('test error')),
