@@ -69,7 +69,7 @@ implements IBatchLoaderItemsStore<ID, R> {
           },
         ] as const
       })
-      .filter(Boolean) as [ID, IBatchLoaderItem<R>][]
+      .filter(Boolean)
 
     this.setState({
       ...state,
