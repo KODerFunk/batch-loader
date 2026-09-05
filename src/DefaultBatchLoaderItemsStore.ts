@@ -46,7 +46,14 @@ implements IBatchLoaderItemsStore<ID, R> {
       throw new Error(`Items with ids: ${JSON.stringify(notFoundIds)} not found`)
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     return items as IBatchLoaderItem<R>[]
+  }
+
+  delete(id: ID): void {
+    this.itemsMap.delete(id)
+  }
+
+  clear(): void {
+    this.itemsMap.clear()
   }
 }

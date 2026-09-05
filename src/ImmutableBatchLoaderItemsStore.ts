@@ -16,7 +16,7 @@ implements IBatchLoaderItemsStore<ID, R> {
     private readonly setState: (state: ImmutableBatchLoaderItemsStoreState<ID, R>) => void,
   ) {}
 
-  get(id: ID): IBatchLoaderItem<R> {
+  get(id: ID): IBatchLoaderItem<R> | undefined {
     return this.getState()[id]
   }
 
@@ -81,5 +81,23 @@ implements IBatchLoaderItemsStore<ID, R> {
     }
 
     return patchedEntries.map(([_id, item]) => item)
+  }
+
+  delete(id: ID): void {
+    const state = this.getState()
+    const nextState = {} as ImmutableBatchLoaderItemsStoreState<ID, R>
+    const deletedKey = String(id)
+
+    for (const key of Object.keys(state)) {
+      if (key !== deletedKey) {
+        nextState[key as ID] = state[key as ID]
+      }
+    }
+
+    this.setState(nextState)
+  }
+
+  clear(): void {
+    this.setState({} as ImmutableBatchLoaderItemsStoreState<ID, R>)
   }
 }

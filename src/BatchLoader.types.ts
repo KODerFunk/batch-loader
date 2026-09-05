@@ -1,22 +1,34 @@
 import type { PromiseWithResolvers } from './promiseWithResolvers'
 
+type BatchFetchFunction<ID extends number | string, R> = (
+  ids: ID[],
+) => Promise<(R | Error | undefined)[]>
+
 export interface IBatchLoaderOptions<ID extends number | string, R> {
   batchFetch: BatchFetchFunction<ID, R>
   batchScheduleFn?: (this: void, callback: () => void) => void
   itemsStore?: IBatchLoaderItemsStore<ID, R>
   refetchStrategy?: 'unfetched' | 'refresh' // default: 'unfetched'
+  /**
+   Max ids per one `batchFetch` call; a bigger buffer is flushed in parallel chunks.
+  */
+  maxBatchSize?: number
   onError?: (error: unknown) => void
 }
-
-type BatchFetchFunction<ID extends number | string, R> = (
-  ids: ID[]
-) => Promise<(R | Error | undefined)[]>
 
 export interface IBatchLoaderItemsStore<ID extends number | string, R> {
   get: (id: ID) => IBatchLoaderItem<R> | undefined
   add: (id: ID, item: IBatchLoaderItem<R>) => void
   update: (id: ID, patch: IBatchLoaderItemPatch<R>) => IBatchLoaderItem<R>
   batchUpdate: (entries: [ID, IBatchLoaderItemPatch<R>][]) => IBatchLoaderItem<R>[]
+  /**
+   Optional; enables `loader.clear()`.
+  */
+  delete?: (id: ID) => void
+  /**
+   Optional; enables `loader.clearAll()`.
+  */
+  clear?: () => void
 }
 
 export type BatchLoaderStatus =
@@ -28,6 +40,10 @@ export type BatchLoaderStatus =
 
 export type IBatchLoaderItem<R> = {
   readonly deferred: PromiseWithResolvers<R>
+  /**
+   Set by `optimisticUpdate`; a batch dispatched with an older snapshot must not overwrite the item.
+  */
+  readonly optimisticRevision?: number
 } & (
   | {
     readonly status: 'scheduled'
@@ -49,7 +65,7 @@ export type IBatchLoaderItem<R> = {
     readonly result?: R
     readonly error: unknown
   }
-)
+  )
 
 export type IBatchLoaderItemPatch<R> =
   | {
@@ -63,6 +79,8 @@ export type IBatchLoaderItemPatch<R> =
     readonly status: 'resolved'
     readonly result: R | undefined
     readonly error: undefined
+    readonly optimisticRevision?: number
+    readonly deferred?: PromiseWithResolvers<R>
   }
   | {
     readonly status: 'rejected'
