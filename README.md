@@ -101,7 +101,6 @@ The closest direct alternatives, compared fact by fact:
 | Pluggable (incl. immutable / Redux-like) stores | ✅ | ➖ `cacheMap` (promise cache only) | ❌ | ❌ |
 | Refetch strategy control | ✅ (`'unfetched' \| 'refresh'`) | ❌ | ❌ | ❌ |
 | Idle tracking | ❌ | ❌ | ❌ | ✅ `idling` / `idlePromise()` |
-| Runtime dependencies | **0** | 0 | 1 | 1 |
 
 ¹ `dataloader`'s `batchScheduleFn` receives the dispatch callback, so *manual dispatch* is possible
 by capturing it — but there is no first-class early-flush method.

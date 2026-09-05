@@ -1,28 +1,44 @@
 import promiseWithResolvers from './promiseWithResolvers'
+import type { PromiseWithResolvers } from './promiseWithResolvers'
 
 const withResolversDescriptor = Object.getOwnPropertyDescriptor(Promise, 'withResolvers')
 
+// On Node >= 22 restores the real method, on older runtimes removes the stub —
+// either way the global state returns to what it was before the test.
+function restoreWithResolvers(): void {
+  if (withResolversDescriptor) {
+    Object.defineProperty(Promise, 'withResolvers', withResolversDescriptor)
+  } else {
+    Reflect.deleteProperty(Promise, 'withResolvers')
+  }
+}
+
 describe('promiseWithResolvers', () => {
-  it('should use native Promise.withResolvers when available', async () => {
-    const { promise, resolve } = promiseWithResolvers<string>()
+  afterEach(restoreWithResolvers)
 
-    expect(promise).toBeInstanceOf(Promise)
+  it('should delegate to Promise.withResolvers when it is available', () => {
+    // Node < 22 lacks the method, so a stub stands in for it — the branch under
+    // test is the delegation itself, not the native implementation.
+    const native: PromiseWithResolvers<string> = {
+      promise: Promise.resolve('native'),
+      resolve: () => undefined,
+      reject: () => undefined,
+    }
 
-    resolve('test')
+    Object.defineProperty(Promise, 'withResolvers', {
+      value: () => native,
+      configurable: true,
+      writable: true,
+    })
 
-    await expect(promise).resolves.toBe('test')
+    // Identity proves the native branch ran — the fallback builds its own object
+    expect(promiseWithResolvers<string>()).toBe(native)
   })
 
   // Fallback for environments without Promise.withResolvers (Node < 22)
   describe('fallback', () => {
     beforeEach(() => {
       Reflect.deleteProperty(Promise, 'withResolvers')
-    })
-
-    afterEach(() => {
-      if (withResolversDescriptor) {
-        Object.defineProperty(Promise, 'withResolvers', withResolversDescriptor)
-      }
     })
 
     it('should resolve and reject via fallback implementation', async () => {
