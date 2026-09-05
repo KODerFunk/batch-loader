@@ -1,6 +1,6 @@
 {
   "name": "@koderfunk/batch-loader",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "license": "MIT",
   "description": "TypeScript batch loader with observable per-item state, caching, optimistic updates and pluggable stores",
   "keywords": [
